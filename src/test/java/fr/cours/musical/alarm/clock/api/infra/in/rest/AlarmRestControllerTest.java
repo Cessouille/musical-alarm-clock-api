@@ -20,6 +20,7 @@ import java.util.List;
 
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -107,6 +108,27 @@ class AlarmRestControllerTest {
     @Test
     void trigger_returns400_whenBodyIsNotJson() throws Exception {
         trigger("not json").andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400));
+    }
+
+    @Test
+    void trigger_returns405_whenMethodIsNotPost() throws Exception {
+        mockMvc.perform(get("/alarms/trigger"))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(jsonPath("$.status").value(405));
+    }
+
+    @Test
+    void trigger_returns415_whenContentTypeIsNotJson() throws Exception {
+        mockMvc.perform(post("/alarms/trigger").contentType(MediaType.TEXT_PLAIN).content("hello"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.status").value(415));
+    }
+
+    @Test
+    void unknownPath_returns404_notAServerError() throws Exception {
+        mockMvc.perform(get("/nothing-here"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test

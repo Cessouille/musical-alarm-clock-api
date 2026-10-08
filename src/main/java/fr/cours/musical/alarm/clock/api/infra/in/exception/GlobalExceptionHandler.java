@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -49,6 +50,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpectedError(Exception ex) {
+        if (ex instanceof ErrorResponse clientError && clientError.getStatusCode().is4xxClientError()) {
+            // Spring's own 4xx (405 wrong method, 415 wrong content type, 404 unknown path...) keep their status.
+            log.warn("Rejected request: {}", ex.getMessage());
+            return ResponseEntity.status(clientError.getStatusCode())
+                    .body(new ApiError(clientError.getStatusCode().value(), clientError.getBody().getTitle()));
+        }
         log.error("Unexpected error", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ApiError(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Unexpected server error"));
