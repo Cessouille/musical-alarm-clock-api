@@ -54,4 +54,16 @@ class SmsNotifierContractTest extends NotifierContractTest {
 
         assertThat(textReceivedByVendor()).hasSize(160);
     }
+
+    @Test
+    void send_doesNotSplitASurrogatePairWhenTruncating() {
+        WakeUpMessage emojiMessage = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN,
+                new Track("😀".repeat(200), "B"));
+
+        notifier.send(emojiMessage);
+
+        String text = textReceivedByVendor();
+        assertThat(text.length()).isLessThanOrEqualTo(160);
+        assertThat(Character.isHighSurrogate(text.charAt(text.length() - 1))).isFalse();
+    }
 }

@@ -23,7 +23,14 @@ public class SmsNotifier implements Notifier {
     @Override
     public void send(WakeUpMessage message) {
         String text = WakeUpTexts.subject(message) + " : " + message.track().title() + " – " + message.track().artist();
-        String truncated = text.length() <= SMS_MAX_LENGTH ? text : text.substring(0, SMS_MAX_LENGTH);
-        smsGateway.sendText("+000-" + message.userId(), truncated);
+        smsGateway.sendText("+000-" + message.userId(), truncate(text));
+    }
+
+    private static String truncate(String text) {
+        if (text.length() <= SMS_MAX_LENGTH) {
+            return text;
+        }
+        int end = Character.isHighSurrogate(text.charAt(SMS_MAX_LENGTH - 1)) ? SMS_MAX_LENGTH - 1 : SMS_MAX_LENGTH;
+        return text.substring(0, end);
     }
 }

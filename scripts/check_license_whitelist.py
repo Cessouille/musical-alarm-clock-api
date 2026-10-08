@@ -4,16 +4,17 @@ license-maven-plugin scan (target/generated-resources/licenses.xml).
 
 A dependency that lists a non-whitelisted license is allowed through only if
 it has an explicit, reviewed entry in REVIEWED_EXCEPTIONS (documented in
-licenses.md) — e.g. a dependency dual-licensed under a whitelisted license
+README.md) — e.g. a dependency dual-licensed under a whitelisted license
 where that branch was deliberately elected.
 """
+import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
 LICENSES_XML = Path("target/generated-resources/licenses.xml")
 
-# Project-approved license families (substring match, case-insensitive).
+# Project-approved license families (whole-word match, case-insensitive).
 WHITELIST = [
     "Apache",       # Apache-2.0 / "Apache License, Version 2.0" / "The Apache Software License..."
     "MIT",
@@ -25,22 +26,22 @@ WHITELIST = [
 ]
 
 # (groupId:artifactId, license name as reported by the scanner) -> justification.
-# Only add an entry here after writing the corresponding decision sheet in licenses.md.
+# Only add an entry here after writing the corresponding decision sheet in README.md.
 REVIEWED_EXCEPTIONS = {
     ("ch.qos.logback:logback-classic", "LGPL-2.1-only"):
-        "Dual-licensed EPL-2.0/LGPL-2.1 by upstream; EPL-2.0 branch is elected. See licenses.md.",
+        "Dual-licensed EPL-2.0/LGPL-2.1 by upstream; EPL-2.0 branch is elected. See README.md.",
     ("ch.qos.logback:logback-core", "LGPL-2.1-only"):
-        "Dual-licensed EPL-2.0/LGPL-2.1 by upstream; EPL-2.0 branch is elected. See licenses.md.",
+        "Dual-licensed EPL-2.0/LGPL-2.1 by upstream; EPL-2.0 branch is elected. See README.md.",
     ("jakarta.annotation:jakarta.annotation-api", "GPL2 w/ CPE"):
         "Dual-licensed EPL-2.0/GPL2+Classpath-Exception by upstream; EPL-2.0 branch is elected "
-        "(and CPE removes copyleft propagation on the GPL branch anyway). See licenses.md.",
+        "(and CPE removes copyleft propagation on the GPL branch anyway). See README.md.",
 }
 
 NS = {"m": "https://mojo.codehaus.org/license-maven-plugin"}
 
 
 def is_whitelisted(license_name: str) -> bool:
-    return any(term.lower() in license_name.lower() for term in WHITELIST)
+    return any(re.search(rf"\b{re.escape(term)}\b", license_name, re.IGNORECASE) for term in WHITELIST)
 
 
 def main() -> int:
@@ -74,7 +75,7 @@ def main() -> int:
         for key, name, reason in violations:
             print(f"  - {key}: '{name}' ({reason})")
         print(f"\n{len(violations)} violation(s). Add a reviewed exception in scripts/check_license_whitelist.py")
-        print("(with a matching decision sheet in licenses.md) or remove/replace the dependency.")
+        print("(with a matching decision sheet in README.md) or remove/replace the dependency.")
         return 1
 
     print("License whitelist check PASSED: no unreviewed non-whitelisted licenses found.")
