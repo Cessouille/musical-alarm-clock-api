@@ -23,7 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/** Real RestClients against a local server that never answers in time: the alarm must still go out. */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
                 "app.music.providers=itunes,musicbrainz",
@@ -70,7 +69,7 @@ class AlarmApiProviderTimeoutTest {
         long start = System.nanoTime();
 
         mockMvc.perform(post("/alarms/trigger").contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"userId\":\"carol\",\"dayOfWeek\":\"MONDAY\",\"weather\":\"SOLEIL\"}"))
+                        .content("{\"userId\":\"carol\",\"dayOfWeek\":\"MONDAY\",\"weather\":\"SUN\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.track.title").value("Here Comes the Sun"))
                 .andExpect(jsonPath("$.degraded").value(true));

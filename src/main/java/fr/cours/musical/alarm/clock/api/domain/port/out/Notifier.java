@@ -7,6 +7,5 @@ public interface Notifier {
 
     ChannelType channel();
 
-    /** A channel failure is signalled by an unchecked exception. */
     void send(WakeUpMessage message);
 }

@@ -40,12 +40,12 @@ class AlarmRestControllerTest {
 
     @Test
     void trigger_returns200WithResult_whenAlarmIsSent() throws Exception {
-        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL)).thenReturn(
+        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN)).thenReturn(
                 new AlarmResult("alice", new Track("Walking on Sunshine", "Katrina & The Waves"),
                         ChannelType.EMAIL, false));
 
         trigger("""
-                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SOLEIL"}""")
+                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SUN"}""")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value("alice"))
                 .andExpect(jsonPath("$.track.title").value("Walking on Sunshine"))
@@ -56,22 +56,22 @@ class AlarmRestControllerTest {
 
     @Test
     void trigger_returns404_whenUserIsUnknown() throws Exception {
-        when(alarmUseCase.triggerAlarm("ghost", DayOfWeek.MONDAY, WeatherType.PLUIE))
+        when(alarmUseCase.triggerAlarm("ghost", DayOfWeek.MONDAY, WeatherType.RAIN))
                 .thenThrow(new UserNotFoundException("ghost"));
 
         trigger("""
-                {"userId":"ghost","dayOfWeek":"MONDAY","weather":"PLUIE"}""")
+                {"userId":"ghost","dayOfWeek":"MONDAY","weather":"RAIN"}""")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
     void trigger_returns503_whenNoChannelCouldDeliver() throws Exception {
-        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL))
+        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
                 .thenThrow(new AlarmDeliveryException("alice", List.of(ChannelType.EMAIL)));
 
         trigger("""
-                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SOLEIL"}""")
+                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SUN"}""")
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value(503));
     }
@@ -79,7 +79,7 @@ class AlarmRestControllerTest {
     @Test
     void trigger_returns400_whenUserIdIsBlank() throws Exception {
         trigger("""
-                {"userId":"  ","dayOfWeek":"MONDAY","weather":"SOLEIL"}""")
+                {"userId":"  ","dayOfWeek":"MONDAY","weather":"SUN"}""")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400));
         verifyNoInteractions(alarmUseCase);
@@ -88,7 +88,7 @@ class AlarmRestControllerTest {
     @Test
     void trigger_returns400_whenAFieldIsMissing() throws Exception {
         trigger("""
-                {"userId":"alice","weather":"SOLEIL"}""")
+                {"userId":"alice","weather":"SUN"}""")
                 .andExpect(status().isBadRequest());
         trigger("""
                 {"userId":"alice","dayOfWeek":"MONDAY"}""")
@@ -98,10 +98,10 @@ class AlarmRestControllerTest {
     @Test
     void trigger_returns400_whenWeatherOrDayIsOutsideTheEnumeration() throws Exception {
         trigger("""
-                {"userId":"alice","dayOfWeek":"MONDAY","weather":"BROUILLARD"}""")
+                {"userId":"alice","dayOfWeek":"MONDAY","weather":"FOG"}""")
                 .andExpect(status().isBadRequest());
         trigger("""
-                {"userId":"alice","dayOfWeek":"FUNDAY","weather":"SOLEIL"}""")
+                {"userId":"alice","dayOfWeek":"FUNDAY","weather":"SUN"}""")
                 .andExpect(status().isBadRequest());
     }
 
@@ -133,11 +133,11 @@ class AlarmRestControllerTest {
 
     @Test
     void trigger_returns500WithoutLeakingDetails_onUnexpectedError() throws Exception {
-        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL))
+        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
                 .thenThrow(new IllegalStateException("secret internals"));
 
         trigger("""
-                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SOLEIL"}""")
+                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SUN"}""")
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message").value("Unexpected server error"));
     }

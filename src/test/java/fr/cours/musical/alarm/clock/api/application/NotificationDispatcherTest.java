@@ -27,7 +27,7 @@ import static org.mockito.Mockito.when;
 class NotificationDispatcherTest {
 
     private static final WakeUpMessage MESSAGE = new WakeUpMessage("alice", DayOfWeek.MONDAY,
-            WeatherType.SOLEIL, new Track("Walking on Sunshine", "Katrina & The Waves"));
+            WeatherType.SUN, new Track("Walking on Sunshine", "Katrina & The Waves"));
     private static final NotificationPolicy POLICY = new NotificationPolicy(List.of(PUSH, SMS, EMAIL));
 
     private final Notifier email = notifier(EMAIL);

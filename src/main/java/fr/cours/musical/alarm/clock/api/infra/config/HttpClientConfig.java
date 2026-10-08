@@ -9,7 +9,6 @@ import org.springframework.http.client.JdkClientHttpRequestFactory;
 import java.net.http.HttpClient;
 import java.time.Duration;
 
-/** A hung provider must never delay the alarm: every outbound call has bounded timeouts. */
 @Configuration
 public class HttpClientConfig {
 

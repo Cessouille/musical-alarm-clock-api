@@ -42,7 +42,6 @@ public class ITunesMusicProvider implements MusicProvider {
                 .map(result -> new Track(result.trackName(), result.artistName()));
     }
 
-    // trackViewUrl and every other iTunes field are deliberately not mapped: they never leave this adapter.
     @JsonIgnoreProperties(ignoreUnknown = true)
     private record ITunesResponse(List<ITunesResult> results) {
     }

@@ -42,7 +42,7 @@ class PushNotifierContractTest extends NotifierContractTest {
         notifier.send(MESSAGE);
 
         assertThat(lastPayload().deviceToken()).isEqualTo("device-alice");
-        assertThat(lastPayload().data()).containsEntry("weather", "SOLEIL").containsEntry("day", "MONDAY");
+        assertThat(lastPayload().data()).containsEntry("weather", "SUN").containsEntry("day", "MONDAY");
     }
 
     private PushPayload lastPayload() {

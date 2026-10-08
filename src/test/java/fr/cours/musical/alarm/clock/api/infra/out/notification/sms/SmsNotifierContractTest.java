@@ -47,7 +47,7 @@ class SmsNotifierContractTest extends NotifierContractTest {
 
     @Test
     void send_truncatesTextToOneSmsSegment() {
-        WakeUpMessage longMessage = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL,
+        WakeUpMessage longMessage = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN,
                 new Track("A".repeat(300), "B"));
 
         notifier.send(longMessage);

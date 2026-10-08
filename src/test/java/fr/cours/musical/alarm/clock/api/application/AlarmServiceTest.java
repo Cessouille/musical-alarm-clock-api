@@ -32,7 +32,7 @@ class AlarmServiceTest {
 
     private static final Track TRACK = new Track("Walking on Sunshine", "Katrina & The Waves");
     private static final UserPreferences ALICE = new UserPreferences("alice",
-            Map.of(new AlarmSlot(DayOfWeek.MONDAY, WeatherType.SOLEIL), "Walking on Sunshine"),
+            Map.of(new AlarmSlot(DayOfWeek.MONDAY, WeatherType.SUN), "Walking on Sunshine"),
             "Here Comes the Sun", ChannelType.EMAIL);
 
     @Mock
@@ -56,11 +56,11 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        WakeUpMessage expected = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL, TRACK);
+        WakeUpMessage expected = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK);
         when(notificationDispatcher.dispatch(expected, ChannelType.EMAIL))
                 .thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
-        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL);
+        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN);
 
         assertThat(result).isEqualTo(new AlarmResult("alice", TRACK, ChannelType.EMAIL, false));
     }
@@ -70,10 +70,10 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Here Comes the Sun", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.NEIGE, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SNOW, TRACK),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
-        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.NEIGE);
+        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SNOW);
 
         assertThat(result.track()).isEqualTo(TRACK);
     }
@@ -83,10 +83,10 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Here Comes the Sun", DayOfWeek.TUESDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.TUESDAY, WeatherType.SOLEIL, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.TUESDAY, WeatherType.SUN, TRACK),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
-        alarmService.triggerAlarm("alice", DayOfWeek.TUESDAY, WeatherType.SOLEIL);
+        alarmService.triggerAlarm("alice", DayOfWeek.TUESDAY, WeatherType.SUN);
 
         verify(trackSelector).select("Here Comes the Sun", DayOfWeek.TUESDAY);
     }
@@ -96,10 +96,10 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, true));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
-        assertThat(alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL).degraded()).isTrue();
+        assertThat(alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN).degraded()).isTrue();
     }
 
     @Test
@@ -107,10 +107,10 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.PUSH, true));
 
-        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL);
+        AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN);
 
         assertThat(result.channel()).isEqualTo(ChannelType.PUSH);
         assertThat(result.degraded()).isTrue();
@@ -120,7 +120,7 @@ class AlarmServiceTest {
     void triggerAlarm_throwsUserNotFound_andDoesNothingElse_whenUserIsUnknown() {
         when(userPreferencesProvider.findByUserId("ghost")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> alarmService.triggerAlarm("ghost", DayOfWeek.MONDAY, WeatherType.SOLEIL))
+        assertThatThrownBy(() -> alarmService.triggerAlarm("ghost", DayOfWeek.MONDAY, WeatherType.SUN))
                 .isInstanceOf(UserNotFoundException.class)
                 .hasMessageContaining("ghost");
 
@@ -132,10 +132,10 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
                 ChannelType.EMAIL)).thenThrow(new AlarmDeliveryException("alice", List.of(ChannelType.EMAIL)));
 
-        assertThatThrownBy(() -> alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SOLEIL))
+        assertThatThrownBy(() -> alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
                 .isInstanceOf(AlarmDeliveryException.class);
     }
 }

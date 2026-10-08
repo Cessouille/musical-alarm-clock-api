@@ -6,6 +6,5 @@ import java.util.Optional;
 
 public interface MusicProvider {
 
-    /** Empty = no match. A provider failure is signalled by an unchecked exception. */
     Optional<Track> findTrack(String query);
 }

@@ -51,7 +51,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleUnexpectedError(Exception ex) {
         if (ex instanceof ErrorResponse clientError && clientError.getStatusCode().is4xxClientError()) {
-            // Spring's own 4xx (405 wrong method, 415 wrong content type, 404 unknown path...) keep their status.
             log.warn("Rejected request: {}", ex.getMessage());
             return ResponseEntity.status(clientError.getStatusCode())
                     .body(new ApiError(clientError.getStatusCode().value(), clientError.getBody().getTitle()));

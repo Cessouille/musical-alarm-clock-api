@@ -20,7 +20,6 @@ public class EmailNotifier implements Notifier {
 
     @Override
     public void send(WakeUpMessage message) {
-        // Real contact resolution is out of scope: the mock recipient is derived from the user id.
         emailClient.sendEmail(message.userId() + "@mock.invalid", WakeUpTexts.subject(message), WakeUpTexts.body(message));
     }
 }

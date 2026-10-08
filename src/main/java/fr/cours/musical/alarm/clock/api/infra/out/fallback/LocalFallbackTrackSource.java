@@ -10,7 +10,6 @@ import java.util.List;
 @Component
 public class LocalFallbackTrackSource implements FallbackTrackSource {
 
-    /** One track per day, Monday first: index = DayOfWeek.ordinal(). */
     private static final List<Track> TRACKS = List.of(
             new Track("Here Comes the Sun", "The Beatles"),
             new Track("Good Vibrations", "The Beach Boys"),

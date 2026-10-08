@@ -18,22 +18,22 @@ class InMemoryUserPreferencesProviderTest {
         UserPreferences alice = provider.findByUserId("alice").orElseThrow();
 
         assertThat(alice.preferredChannel()).isEqualTo(ChannelType.EMAIL);
-        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SOLEIL)).isEqualTo("Walking on Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SUN)).isEqualTo("Walking on Sunshine");
     }
 
     @Test
     void findByUserId_givesDifferentTracksForDifferentDaysAndWeathers() {
         UserPreferences alice = provider.findByUserId("alice").orElseThrow();
 
-        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SOLEIL)).isEqualTo("Walking on Sunshine");
-        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.PLUIE)).isEqualTo("Singin' in the Rain");
-        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.SOLEIL)).isEqualTo("Good Day Sunshine");
-        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.PLUIE)).isEqualTo("Purple Rain");
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SUN)).isEqualTo("Walking on Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.RAIN)).isEqualTo("Singin' in the Rain");
+        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.SUN)).isEqualTo("Good Day Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.RAIN)).isEqualTo("Purple Rain");
     }
 
     @Test
     void findByUserId_returnsFallbackForUnmappedCombination() {
-        assertThat(provider.findByUserId("alice").orElseThrow().queryFor(DayOfWeek.SUNDAY, WeatherType.NUAGEUX))
+        assertThat(provider.findByUserId("alice").orElseThrow().queryFor(DayOfWeek.SUNDAY, WeatherType.CLOUDY))
                 .isEqualTo("Here Comes the Sun");
     }
 

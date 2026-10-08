@@ -7,10 +7,10 @@ Service qui réveille chaque utilisateur avec un morceau choisi selon la météo
 `POST /api/v1/alarms/trigger`
 
 ```json
-{"userId": "alice", "dayOfWeek": "MONDAY", "weather": "SOLEIL"}
+{"userId": "alice", "dayOfWeek": "MONDAY", "weather": "SUN"}
 ```
 
-`weather` ∈ `SOLEIL | PLUIE | NEIGE | NUAGEUX`, `dayOfWeek` ∈ `MONDAY … SUNDAY` (l'ordonnancement n'est pas codé : c'est l'appelant qui déclenche à la bonne heure).
+`weather` ∈ `SUN | RAIN | SNOW | CLOUDY`, `dayOfWeek` ∈ `MONDAY … SUNDAY` (l'ordonnancement n'est pas codé : c'est l'appelant qui déclenche à la bonne heure).
 
 Réponse `200` :
 

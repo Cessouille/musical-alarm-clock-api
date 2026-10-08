@@ -1,5 +1,5 @@
 package fr.cours.musical.alarm.clock.api.domain.model;
 
 public enum WeatherType {
-    SOLEIL, PLUIE, NEIGE, NUAGEUX
+    SUN, RAIN, SNOW, CLOUDY
 }

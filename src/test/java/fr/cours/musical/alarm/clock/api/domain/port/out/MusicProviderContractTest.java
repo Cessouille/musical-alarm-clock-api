@@ -8,30 +8,22 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Contract every MusicProvider implementation must satisfy. Each adapter's test
- * subclass stubs its own HTTP responses via the given* hooks below.
- */
 public abstract class MusicProviderContractTest {
 
     protected abstract MusicProvider provider();
 
-    /** Answers one match: "Here Comes the Sun" by "The Beatles". */
     protected abstract void givenTrackFoundResponse();
 
     protected abstract void givenNoMatchResponse();
 
     protected abstract void givenEmptyBodyResponse();
 
-    /** Answers one match: "Désenchantée" by "Mylène Farmer". */
     protected abstract void givenAccentedTrackResponse();
 
-    /** HTTP 200 whose only result has no title. */
     protected abstract void givenOnlyUnusableResultResponse();
 
     protected abstract void givenServerErrorResponse();
 
-    /** Expects a request carrying the URL-encoded form {@code AC%2FDC%20%26%20Co}; answers "no match". */
     protected abstract void givenNoMatchForEncodedRequestAcDcAndCo();
 
     protected abstract void verifyExpectedRequestWasReceived();

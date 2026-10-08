@@ -34,12 +34,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Full-context test: real controller, services, failover chain, cache and notifiers wired by Spring.
- * Only outbound HTTP (iTunes / MusicBrainz) is stubbed at transport level and the three channel
- * "SDKs" are replaced by mocks. The track cache is a singleton shared by all tests of this class:
- * each test therefore uses a query no other test uses.
- */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
                 "spring.main.allow-bean-definition-overriding=true",
@@ -81,7 +75,6 @@ class AlarmApiEndToEndTest {
                 .content("{\"userId\":\"%s\",\"dayOfWeek\":\"%s\",\"weather\":\"%s\"}".formatted(user, day, weather)));
     }
 
-    /** The request must carry exactly this URL-encoded term: proves which track the (day, weather) selected. */
     private void itunesFinds(String encodedTerm, String title, String artist) {
         itunesServer.expect(requestTo(containsString("/search?term=" + encodedTerm + "&"))).andRespond(withSuccess(
                 "{\"resultCount\":1,\"results\":[{\"trackName\":\"%s\",\"artistName\":\"%s\",\"trackViewUrl\":\"https://music.apple.com/x\"}]}"
@@ -92,7 +85,7 @@ class AlarmApiEndToEndTest {
     void trigger_sendsWeatherTrackByEmail_andDoesNotLeakIntoTheResponse() throws Exception {
         itunesFinds("Walking%20on%20Sunshine", "Walking on Sunshine", "Katrina & The Waves");
 
-        trigger("alice", "MONDAY", "SOLEIL")
+        trigger("alice", "MONDAY", "SUN")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.track.title").value("Walking on Sunshine"))
                 .andExpect(jsonPath("$.channel").value("EMAIL"))
@@ -105,10 +98,9 @@ class AlarmApiEndToEndTest {
 
     @Test
     void trigger_choosesTheTrackOfTheDayAndWeather_notOnlyTheWeather() throws Exception {
-        // alice has a different track for sunny Monday ("Walking on Sunshine") and sunny Tuesday.
         itunesFinds("Good%20Day%20Sunshine", "Good Day Sunshine", "The Beatles");
 
-        trigger("alice", "TUESDAY", "SOLEIL")
+        trigger("alice", "TUESDAY", "SUN")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.track.title").value("Good Day Sunshine"));
 
@@ -122,7 +114,7 @@ class AlarmApiEndToEndTest {
                 {"recordings":[{"title":"Purple Rain","artist-credit":[{"name":"Prince"}]}]}
                 """, MediaType.APPLICATION_JSON));
 
-        trigger("alice", "TUESDAY", "PLUIE")
+        trigger("alice", "TUESDAY", "RAIN")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.track.artist").value("Prince"))
                 .andExpect(jsonPath("$.degraded").value(false));
@@ -133,7 +125,7 @@ class AlarmApiEndToEndTest {
         itunesServer.expect(requestTo(containsString("/search"))).andRespond(withServerError());
         musicBrainzServer.expect(requestTo(containsString("/recording"))).andRespond(withServerError());
 
-        trigger("bob", "TUESDAY", "NEIGE")
+        trigger("bob", "TUESDAY", "SNOW")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.track.title").value("Good Vibrations"))
                 .andExpect(jsonPath("$.channel").value("SMS"))
@@ -147,7 +139,7 @@ class AlarmApiEndToEndTest {
         itunesFinds("Dancing%20Queen", "Dancing Queen", "ABBA");
         doThrow(new IllegalStateException("push provider down")).when(pushService).pushNotification(any(PushPayload.class));
 
-        trigger("carol", "FRIDAY", "NUAGEUX")
+        trigger("carol", "FRIDAY", "CLOUDY")
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.channel").value("SMS"))
                 .andExpect(jsonPath("$.degraded").value(true));
@@ -160,7 +152,7 @@ class AlarmApiEndToEndTest {
         doThrow(new IllegalStateException("down")).when(smsGateway).sendText(any(), any());
         doThrow(new IllegalStateException("down")).when(pushService).pushNotification(any(PushPayload.class));
 
-        trigger("alice", "SUNDAY", "NUAGEUX")
+        trigger("alice", "SUNDAY", "CLOUDY")
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value(503));
     }
@@ -169,20 +161,20 @@ class AlarmApiEndToEndTest {
     void trigger_queriesTheProviderOnlyOnce_forTwoIdenticalRequests() throws Exception {
         itunesFinds("Imagine", "Imagine", "John Lennon");
 
-        trigger("bob", "WEDNESDAY", "NUAGEUX").andExpect(status().isOk());
-        trigger("bob", "THURSDAY", "NUAGEUX").andExpect(status().isOk());
+        trigger("bob", "WEDNESDAY", "CLOUDY").andExpect(status().isOk());
+        trigger("bob", "THURSDAY", "CLOUDY").andExpect(status().isOk());
 
         itunesServer.verify();
     }
 
     @Test
     void trigger_returns404_forUnknownUser() throws Exception {
-        trigger("ghost", "MONDAY", "SOLEIL").andExpect(status().isNotFound());
+        trigger("ghost", "MONDAY", "SUN").andExpect(status().isNotFound());
     }
 
     @Test
     void trigger_returns400_forUnknownWeather() throws Exception {
-        trigger("alice", "MONDAY", "BROUILLARD").andExpect(status().isBadRequest());
+        trigger("alice", "MONDAY", "FOG").andExpect(status().isBadRequest());
     }
 
     @TestConfiguration

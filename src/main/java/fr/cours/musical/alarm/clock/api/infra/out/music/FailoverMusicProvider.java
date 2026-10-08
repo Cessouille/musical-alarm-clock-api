@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-/** Tries the configured providers in order; a failing or empty provider never blocks the next one. */
 @Slf4j
 @Component
 @Qualifier("live")

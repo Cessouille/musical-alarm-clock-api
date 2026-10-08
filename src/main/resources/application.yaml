@@ -8,7 +8,6 @@ server:
 
 app:
   music:
-    # Ordre d'essai des fournisseurs, séparés par des virgules. Vide = liste locale uniquement.
     providers: ${MUSIC_PROVIDERS:itunes,musicbrainz}
   itunes:
     base-url: https://itunes.apple.com
@@ -16,7 +15,6 @@ app:
     base-url: https://musicbrainz.org/ws/2
     user-agent: "MusicalAlarmClockTP/1.0 (${MUSICBRAINZ_CONTACT:contact@example.invalid})"
   notification:
-    # Canaux essayés après le canal préféré de l'utilisateur, dans cet ordre.
     fallback-order: ${NOTIFICATION_FALLBACK_ORDER:PUSH,SMS,EMAIL}
   http:
     connect-timeout: 2s

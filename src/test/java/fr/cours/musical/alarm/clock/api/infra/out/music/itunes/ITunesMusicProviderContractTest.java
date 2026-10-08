@@ -17,7 +17,6 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 
 class ITunesMusicProviderContractTest extends MusicProviderContractTest {
 
-    /** iTunes really answers JSON with this content type. */
     private static final MediaType ITUNES_CONTENT_TYPE = new MediaType("text", "javascript", StandardCharsets.UTF_8);
 
     private MockRestServiceServer server;
