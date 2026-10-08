@@ -63,6 +63,7 @@
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
                 <executions>
                     <execution>
                         <id>prepare-agent</id>
@@ -107,6 +108,18 @@
                         </configuration>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>2.7.1</version>
+                <configuration>
+                    <licensesOutputDirectory>${project.build.directory}/generated-resources/licenses</licensesOutputDirectory>
+                    <licensesOutputFile>${project.build.directory}/generated-resources/licenses.xml</licensesOutputFile>
+                    <failOnMissing>false</failOnMissing>
+                    <sortByGroupIdAndArtifactId>true</sortByGroupIdAndArtifactId>
+                </configuration>
             </plugin>
         </plugins>
     </build>
