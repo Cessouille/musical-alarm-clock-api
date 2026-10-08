@@ -1,6 +1,7 @@
 # Réveil musical
+Célian CHAUSSON - INFRES 17 DL
 
-Service qui réveille chaque utilisateur avec un morceau choisi selon la météo du jour, puis le prévient sur son canal préféré (email, SMS ou push — simulés par des mocks, aucun envoi réel).
+Service qui réveille chaque utilisateur avec un morceau choisi selon la météo du jour, puis le prévient sur son canal préféré (email, SMS ou push - simulés par des mocks, aucun envoi réel).
 
 ## Appel principal
 
@@ -10,7 +11,7 @@ Service qui réveille chaque utilisateur avec un morceau choisi selon la météo
 {"userId": "alice", "dayOfWeek": "MONDAY", "weather": "SUN"}
 ```
 
-`weather` ∈ `SUN | RAIN | SNOW | CLOUDY`, `dayOfWeek` ∈ `MONDAY … SUNDAY` (l'ordonnancement n'est pas codé : c'est l'appelant qui déclenche à la bonne heure).
+`weather` -> `SUN | RAIN | SNOW | CLOUDY`, `dayOfWeek` -> `MONDAY … SUNDAY` (l'ordonnancement n'est pas codé : c'est l'appelant qui déclenche à la bonne heure).
 
 Réponse `200` :
 
@@ -18,27 +19,27 @@ Réponse `200` :
 {"userId": "alice", "track": {"title": "Walking On Sunshine", "artist": "Katrina and the Waves"}, "channel": "EMAIL", "degraded": false}
 ```
 
-`degraded=true` signale un mode dégradé : morceau de secours local et/ou canal de repli. Erreurs : `400` (entrée invalide — `userId` limité à `[A-Za-z0-9._-]`, 64 caractères), `404` (utilisateur inconnu), `503` (aucun canal n'a pu délivrer le réveil, ou service utilisateur indisponible — jamais de faux succès).
+`degraded=true` signale un mode dégradé : morceau de secours local et/ou canal de repli. Erreurs : `400` (entrée invalide - `userId` limité à `[A-Za-z0-9._-]`, 64 caractères), `404` (utilisateur inconnu), `503` (aucun canal n'a pu délivrer le réveil, ou service utilisateur indisponible - jamais de faux succès).
 
 Utilisateurs de démonstration (mock du service interne, qui fournit aussi les **coordonnées** `Contact`, une adresse par canal) : `alice` (email ; lundi/mardi × soleil/pluie), `bob` (SMS ; mardi et samedi sous la neige), `carol` (push ; uniquement un morceau de secours).
 
-## Architecture : besoins métier → décisions techniques
+## Architecture : besoins métier -> décisions techniques
 
 | Besoin métier | Traduction technique |
 |---|---|
 | Tester / changer de fournisseur musical vite | Port `MusicProvider` ; un adaptateur par fournisseur (`ITunesMusicProvider`, `MusicBrainzMusicProvider`) ; choix et **ordre** pilotés par `app.music.providers`, sans recompilation. Ajouter un fournisseur = une classe `@Component("nom") @Qualifier("source")`. |
 | Plusieurs canaux, d'autres à venir | Port `Notifier` ; un adaptateur par canal au-dessus de trois faux « SDK » aux interfaces volontairement différentes (`EmailClient`, `SmsGateway`, `PushService`). Ajouter un canal = un `Notifier` + une valeur de `ChannelType`. |
 | Licences et fraîcheur vérifiées | Audit automatisé + gate CI (voir plus bas). |
-| Jamais de silence | Chaîne de fournisseurs avec repli (`FailoverMusicProvider`) → liste locale de 7 morceaux (`LocalFallbackTrackSource`, un par jour) ; repli de canal (`NotificationDispatcher`, ordre `app.notification.fallback-order`) ; timeouts HTTP (`app.http.*`) ; échec total des canaux = `503` explicite et loggé. |
+| Jamais de silence | Chaîne de fournisseurs avec repli (`FailoverMusicProvider`) -> liste locale de 7 morceaux (`LocalFallbackTrackSource`, un par jour) ; repli de canal (`NotificationDispatcher`, ordre `app.notification.fallback-order`) ; timeouts HTTP (`app.http.*`) ; échec total des canaux = `503` explicite et loggé. |
 | Quota iTunes (~20 req/min) | Cache en décorateur `@Primary` (`CachingMusicProvider` + port `TrackCache`), remplaçable (Redis, Caffeine…) sans toucher au métier. `InMemoryTrackCache` est borné (`app.cache.max-entries`, LRU) et expire (`app.cache.ttl`). Un fournisseur en échec est mis de côté `app.music.failure-cooldown` (60 s) au lieu d'être re-sollicité à chaque requête. |
 
-Organisation (`fr.cours.musical.alarm.clock.api`) : `domain` (modèle, ports, exceptions — aucune dépendance framework) → `application` (`AlarmService`, `TrackSelector`, `NotificationDispatcher`) → `infra` (`in` : REST ; `out` : adaptateurs ; `config` : câblage). Les trois services de `application` portent uniquement l'annotation `@Service` de Spring (plus Lombok/SLF4J) : `ArchitectureTest` leur interdit tout autre accès à Spring (`web`, `http`, `boot`, `beans`, `context`), à Jackson et à `infra`.
+Organisation (`fr.cours.musical.alarm.clock.api`) : `domain` (modèle, ports, exceptions - aucune dépendance framework) -> `application` (`AlarmService`, `TrackSelector`, `NotificationDispatcher`) -> `infra` (`in` : REST ; `out` : adaptateurs ; `config` : câblage). Les trois services de `application` portent uniquement l'annotation `@Service` de Spring (plus Lombok/SLF4J) : `ArchitectureTest` leur interdit tout autre accès à Spring (`web`, `http`, `boot`, `beans`, `context`), à Jackson et à `infra`.
 
 Les deux exigences d'architecture sont **vérifiées automatiquement** par `ArchitectureTest` (ArchUnit) : le domaine et l'application ne dépendent d'aucun framework, fournisseur ou canal ; les adaptateurs ne se connaissent pas entre eux (les fournisseurs musicaux sont repérés par l'annotation `@MusicSource`, pas par une chaîne) ; aucun bean Spring n'est instancié avec `new` (IoC / DI). Les champs propres aux API (par ex. `trackViewUrl` d'iTunes) restent dans des DTO privés de l'adaptateur.
 
-**Choix du morceau.** Il dépend du **couple (jour de la semaine, météo)** : le service utilisateur (mocké) renvoie, pour chaque utilisateur, un morceau par combinaison choisie — par exemple lundi + soleil → *Walking on Sunshine*, lundi + pluie → *Singin' in the Rain*, mardi + soleil → *Good Day Sunshine*. Une combinaison non choisie reçoit le **morceau de secours de l'utilisateur** ; si aucun fournisseur musical ne le trouve, la **liste locale** (un morceau par jour) prend le relais.
+**Choix du morceau.** Il dépend du **couple (jour de la semaine, météo)** : le service utilisateur (mocké) renvoie, pour chaque utilisateur, un morceau par combinaison choisie - par exemple lundi + soleil -> *Walking on Sunshine*, lundi + pluie -> *Singin' in the Rain*, mardi + soleil -> *Good Day Sunshine*. Une combinaison non choisie reçoit le **morceau de secours de l'utilisateur** ; si aucun fournisseur musical ne le trouve, la **liste locale** (un morceau par jour) prend le relais.
 
-**Coordonnées et mocks.** Les adresses viennent du service utilisateur (`Contact` = table `ChannelType → adresse` dans `UserPreferences`), jamais de l'`userId` : le domaine ne connaît aucun champ propre à un canal, donc ajouter WhatsApp ou l'appel vocal ne le modifie pas (seulement une valeur de `ChannelType` et un `Notifier`). Un notifier sans adresse pour son canal échoue explicitement, ce qui déclenche le repli de canal. Les faux SDK `Console*` ne sont enregistrés que si `app.notification.mock=true` (défaut) ; ils écrivent en console le message complet mais avec le destinataire masqué (`al***id`). Le profil `prod` (`application-prod.yaml`) met `mock=false` : l'application **refuse de démarrer** tant qu'un vrai `EmailClient`, `SmsGateway` et `PushService` n'est pas fourni, plutôt que d'annoncer un envoi qui n'a pas eu lieu.
+**Coordonnées et mocks.** Les adresses viennent du service utilisateur (`Contact` = table `ChannelType -> adresse` dans `UserPreferences`), jamais de l'`userId` : le domaine ne connaît aucun champ propre à un canal, donc ajouter WhatsApp ou l'appel vocal ne le modifie pas (seulement une valeur de `ChannelType` et un `Notifier`). Un notifier sans adresse pour son canal échoue explicitement, ce qui déclenche le repli de canal. Les faux SDK `Console*` ne sont enregistrés que si `app.notification.mock=true` (défaut) ; ils écrivent en console le message complet mais avec le destinataire masqué (`al***id`). Le profil `prod` (`application-prod.yaml`) met `mock=false` : l'application **refuse de démarrer** tant qu'un vrai `EmailClient`, `SmsGateway` et `PushService` n'est pas fourni, plutôt que d'annoncer un envoi qui n'a pas eu lieu.
 
 **Panne du service utilisateur.** Sans ses préférences (et donc ses coordonnées), l'utilisateur ne peut pas être joint : la requête échoue en `503` explicite (`UserPreferencesUnavailableException`), loggée en `ERROR`. Un rejeu (file, retry) reste à prévoir côté appelant ou dans une évolution ultérieure, de même que l'idempotence des envois (un repli après un timeout ambigu peut doubler un réveil).
 
@@ -65,7 +66,7 @@ mvn spring-boot:run   # démarre sur http://localhost:8080/api/v1
 mvn verify            # tests + seuil JaCoCo (85 % de lignes) ; rapport : target/site/jacoco/index.html
 ```
 
-La suite couvre : domaine, services (mocks de ports), **tests de contrat** communs à chaque fournisseur musical et à chaque canal, adaptateurs HTTP (réponses simulées), cache, contrôleur REST, bout en bout (panne iTunes → MusicBrainz → liste locale ; canal en panne → repli ; tous canaux en panne → 503), fournisseur qui ne répond jamais (timeout), règles d'architecture.
+La suite couvre : domaine, services (mocks de ports), **tests de contrat** communs à chaque fournisseur musical et à chaque canal, adaptateurs HTTP (réponses simulées), cache, contrôleur REST, bout en bout (panne iTunes -> MusicBrainz -> liste locale ; canal en panne -> repli ; tous canaux en panne -> 503), fournisseur qui ne répond jamais (timeout), règles d'architecture.
 
 ## Dépendances, licences et fraîcheur
 
@@ -73,7 +74,7 @@ Méthode (reproductible, toutes portées et dépendances transitives comprises) 
 
 ```bash
 mvn package                                    # produit aussi le SBOM CycloneDX : target/classes/META-INF/sbom/application.cdx.json (hors tests)
-mvn license:download-licenses                  # scan des licences déclarées → target/generated-resources/licenses.xml
+mvn license:download-licenses                  # scan des licences déclarées -> target/generated-resources/licenses.xml
 python scripts/check_license_whitelist.py      # gate : échoue si licence hors liste blanche (Apache, MIT, BSD, EDL) ou sans exception relue
 python scripts/dependency_report.py --readme README.md   # régénère le tableau ci-dessous (Maven Central) ; la portée vient du SBOM
 ```
@@ -182,14 +183,14 @@ Le gate tourne en CI (`.github/workflows/ci.yml`, job `license-audit`) ; il est 
 
 ### Composants qui posent question
 
-- **`license-maven-plugin` — LGPL-3.0 (copyleft).** Outil de build uniquement : il n'est ni lié à l'application ni redistribué (absent du jar), donc l'obligation LGPL ne s'applique pas. Il est remplaçable sans toucher au code (le scan ne sert qu'à l'audit).
-- **`ch.qos.logback:logback-classic` / `logback-core` — EPL-2.0 / LGPL-2.1.** Double licence : on retient la branche **EPL-2.0** (copyleft faible au niveau fichier, aucune modification ni redistribution du code de Logback). Utilisé uniquement via la façade SLF4J : aucun import `ch.qos.logback` dans `src/`, donc remplaçable sans toucher au métier. Exception relue dans `scripts/check_license_whitelist.py`.
-- **`jakarta.annotation:jakarta.annotation-api` — EPL-2.0 / GPL-2.0 avec Classpath Exception.** Double licence : branche **EPL-2.0** élue ; la Classpath Exception supprime de toute façon la propagation du copyleft. Simples annotations consommées par le conteneur Spring. Exception relue dans le script.
+- **`license-maven-plugin` - LGPL-3.0 (copyleft).** Outil de build uniquement : il n'est ni lié à l'application ni redistribué (absent du jar), donc l'obligation LGPL ne s'applique pas. Il est remplaçable sans toucher au code (le scan ne sert qu'à l'audit).
+- **`ch.qos.logback:logback-classic` / `logback-core` - EPL-2.0 / LGPL-2.1.** Double licence : on retient la branche **EPL-2.0** (copyleft faible au niveau fichier, aucune modification ni redistribution du code de Logback). Utilisé uniquement via la façade SLF4J : aucun import `ch.qos.logback` dans `src/`, donc remplaçable sans toucher au métier. Exception relue dans `scripts/check_license_whitelist.py`.
+- **`jakarta.annotation:jakarta.annotation-api` - EPL-2.0 / GPL-2.0 avec Classpath Exception.** Double licence : branche **EPL-2.0** élue ; la Classpath Exception supprime de toute façon la propagation du copyleft. Simples annotations consommées par le conteneur Spring. Exception relue dans le script.
 - **JUnit 5/6 (`Eclipse Public License v2.0`), `jakarta.xml.bind-api` / `jakarta.activation-api` (EDL 1.0, équivalent BSD-3-Clause).** Portée **test** uniquement (via `spring-boot-starter-test`), jamais dans l'artefact livré. EDL 1.0 (BSD-3-Clause) reste dans la liste blanche ; l'EPL n'y est **plus** : chaque artefact EPL (JUnit ×6, logback ×2, `jakarta.annotation-api`) a une exception nominative dans `scripts/check_license_whitelist.py`, de sorte qu'une nouvelle dépendance EPL fait échouer le gate tant qu'elle n'a pas été relue.
-- **`com.tngtech.archunit:archunit` — Apache-2.0 / BSD.** Portée test (vérification d'architecture) ; version à jour.
+- **`com.tngtech.archunit:archunit` - Apache-2.0 / BSD.** Portée test (vérification d'architecture) ; version à jour.
 - **Versions « en retard » du tableau.** Toutes sont **imposées par le BOM de Spring Boot 4.1.1**, qui est la dernière version stable de Spring Boot au moment du scan ; nous ne les surchargeons pas pour garder l'ensemble testé ensemble par l'équipe Spring (Logback 1.5.x, Jackson annotations 2.21, JUnit 6.0.x…). Les écarts sont des mineures/patchs, sauf `json-path` (majeure, portée test uniquement). **Exception assumée : Tomcat** est surchargé (`<tomcat.version>11.0.26</tomcat.version>` dans le `pom.xml`, patch de la même mineure que celle du BOM) car les patchs Tomcat embarquent souvent des correctifs de sécurité ; retirer la surcharge dès que le BOM Spring Boot la rattrape. Action : monter Spring Boot dès la prochaine version corrective.
 
 ### Services externes consommés (ce ne sont pas des paquets)
 
-- **iTunes Search API** : gratuite, sans clé ; environ 20 requêtes/minute → cache obligatoire côté application (`CachingMusicProvider`). Elle répond en `Content-Type: text/javascript` : l'adaptateur lit le corps en texte puis le désérialise lui-même. Seuls le titre et l'artiste sont conservés (`trackViewUrl` ne sort pas de l'adaptateur).
-- **MusicBrainz** : gratuite, sans clé ; **`User-Agent` identifiable obligatoire** (nom, version, contact) sous peine de refus ; limite d'environ 1 requête/seconde par IP au-delà de laquelle les requêtes sont refusées en `503` (règles de limitation de débit publiées par MusicBrainz) → cache, et repli automatique vers la liste locale en cas de refus. Vérifier les conditions d'utilisation et la licence des données avant tout usage commercial.
+- **iTunes Search API** : gratuite, sans clé ; environ 20 requêtes/minute -> cache obligatoire côté application (`CachingMusicProvider`). Elle répond en `Content-Type: text/javascript` : l'adaptateur lit le corps en texte puis le désérialise lui-même. Seuls le titre et l'artiste sont conservés (`trackViewUrl` ne sort pas de l'adaptateur).
+- **MusicBrainz** : gratuite, sans clé ; **`User-Agent` identifiable obligatoire** (nom, version, contact) sous peine de refus ; limite d'environ 1 requête/seconde par IP au-delà de laquelle les requêtes sont refusées en `503` (règles de limitation de débit publiées par MusicBrainz) -> cache, et repli automatique vers la liste locale en cas de refus. Vérifier les conditions d'utilisation et la licence des données avant tout usage commercial.
