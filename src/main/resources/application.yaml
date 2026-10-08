@@ -1,3 +1,26 @@
 spring:
   application:
     name: Musical alarm clock API
+
+server:
+  servlet:
+    context-path: /api/v1
+
+app:
+  music:
+    providers: ${MUSIC_PROVIDERS:itunes,musicbrainz}
+    failure-cooldown: 60s
+  cache:
+    ttl: 24h
+    max-entries: 10000
+  itunes:
+    base-url: https://itunes.apple.com
+  musicbrainz:
+    base-url: https://musicbrainz.org/ws/2
+    user-agent: "MusicalAlarmClockTP/1.0 (${MUSICBRAINZ_CONTACT:contact@example.invalid})"
+  notification:
+    mock: true
+    fallback-order: ${NOTIFICATION_FALLBACK_ORDER:PUSH,SMS,EMAIL}
+  http:
+    connect-timeout: 2s
+    read-timeout: 3s
