@@ -3,6 +3,7 @@ package fr.cours.musical.alarm.clock.api.application;
 import fr.cours.musical.alarm.clock.api.domain.exception.AlarmDeliveryException;
 import fr.cours.musical.alarm.clock.api.domain.exception.UserNotFoundException;
 import fr.cours.musical.alarm.clock.api.domain.model.AlarmResult;
+import fr.cours.musical.alarm.clock.api.domain.model.AlarmSlot;
 import fr.cours.musical.alarm.clock.api.domain.model.ChannelType;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
 import fr.cours.musical.alarm.clock.api.domain.model.UserPreferences;
@@ -22,6 +23,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -30,7 +32,8 @@ class AlarmServiceTest {
 
     private static final Track TRACK = new Track("Walking on Sunshine", "Katrina & The Waves");
     private static final UserPreferences ALICE = new UserPreferences("alice",
-            Map.of(WeatherType.SOLEIL, "Walking on Sunshine"), "Here Comes the Sun", ChannelType.EMAIL);
+            Map.of(new AlarmSlot(DayOfWeek.MONDAY, WeatherType.SOLEIL), "Walking on Sunshine"),
+            "Here Comes the Sun", ChannelType.EMAIL);
 
     @Mock
     private UserPreferencesProvider userPreferencesProvider;
@@ -73,6 +76,19 @@ class AlarmServiceTest {
         AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.NEIGE);
 
         assertThat(result.track()).isEqualTo(TRACK);
+    }
+
+    @Test
+    void triggerAlarm_looksUpTheUserFallbackTrack_whenOnlyTheDayDiffers() {
+        when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
+        when(trackSelector.select("Here Comes the Sun", DayOfWeek.TUESDAY))
+                .thenReturn(new TrackSelector.Selection(TRACK, false));
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.TUESDAY, WeatherType.SOLEIL, TRACK),
+                ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
+
+        alarmService.triggerAlarm("alice", DayOfWeek.TUESDAY, WeatherType.SOLEIL);
+
+        verify(trackSelector).select("Here Comes the Sun", DayOfWeek.TUESDAY);
     }
 
     @Test

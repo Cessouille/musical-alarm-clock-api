@@ -81,15 +81,16 @@ class AlarmApiEndToEndTest {
                 .content("{\"userId\":\"%s\",\"dayOfWeek\":\"%s\",\"weather\":\"%s\"}".formatted(user, day, weather)));
     }
 
-    private void itunesFinds(String title, String artist) {
-        itunesServer.expect(requestTo(containsString("/search"))).andRespond(withSuccess(
+    /** The request must carry exactly this URL-encoded term: proves which track the (day, weather) selected. */
+    private void itunesFinds(String encodedTerm, String title, String artist) {
+        itunesServer.expect(requestTo(containsString("/search?term=" + encodedTerm + "&"))).andRespond(withSuccess(
                 "{\"resultCount\":1,\"results\":[{\"trackName\":\"%s\",\"artistName\":\"%s\",\"trackViewUrl\":\"https://music.apple.com/x\"}]}"
                         .formatted(title, artist), ITUNES_CONTENT_TYPE));
     }
 
     @Test
     void trigger_sendsWeatherTrackByEmail_andDoesNotLeakIntoTheResponse() throws Exception {
-        itunesFinds("Walking on Sunshine", "Katrina & The Waves");
+        itunesFinds("Walking%20on%20Sunshine", "Walking on Sunshine", "Katrina & The Waves");
 
         trigger("alice", "MONDAY", "SOLEIL")
                 .andExpect(status().isOk())
@@ -103,15 +104,27 @@ class AlarmApiEndToEndTest {
     }
 
     @Test
+    void trigger_choosesTheTrackOfTheDayAndWeather_notOnlyTheWeather() throws Exception {
+        // alice has a different track for sunny Monday ("Walking on Sunshine") and sunny Tuesday.
+        itunesFinds("Good%20Day%20Sunshine", "Good Day Sunshine", "The Beatles");
+
+        trigger("alice", "TUESDAY", "SOLEIL")
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.track.title").value("Good Day Sunshine"));
+
+        itunesServer.verify();
+    }
+
+    @Test
     void trigger_fallsBackToMusicBrainz_whenITunesIsDown() throws Exception {
         itunesServer.expect(requestTo(containsString("/search"))).andRespond(withServerError());
-        musicBrainzServer.expect(requestTo(containsString("/recording"))).andRespond(withSuccess("""
-                {"recordings":[{"title":"Singin' in the Rain","artist-credit":[{"name":"Gene Kelly"}]}]}
+        musicBrainzServer.expect(requestTo(containsString("query=Purple%20Rain"))).andRespond(withSuccess("""
+                {"recordings":[{"title":"Purple Rain","artist-credit":[{"name":"Prince"}]}]}
                 """, MediaType.APPLICATION_JSON));
 
         trigger("alice", "TUESDAY", "PLUIE")
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.track.artist").value("Gene Kelly"))
+                .andExpect(jsonPath("$.track.artist").value("Prince"))
                 .andExpect(jsonPath("$.degraded").value(false));
     }
 
@@ -131,7 +144,7 @@ class AlarmApiEndToEndTest {
 
     @Test
     void trigger_fallsBackToAnotherChannel_whenPreferredChannelFails() throws Exception {
-        itunesFinds("Dancing Queen", "ABBA");
+        itunesFinds("Dancing%20Queen", "Dancing Queen", "ABBA");
         doThrow(new IllegalStateException("push provider down")).when(pushService).pushNotification(any(PushPayload.class));
 
         trigger("carol", "FRIDAY", "NUAGEUX")
@@ -142,7 +155,7 @@ class AlarmApiEndToEndTest {
 
     @Test
     void trigger_returns503_whenEveryChannelFails() throws Exception {
-        itunesFinds("Here Comes the Sun", "The Beatles");
+        itunesFinds("Here%20Comes%20the%20Sun", "Here Comes the Sun", "The Beatles");
         doThrow(new IllegalStateException("down")).when(emailClient).sendEmail(any(), any(), any());
         doThrow(new IllegalStateException("down")).when(smsGateway).sendText(any(), any());
         doThrow(new IllegalStateException("down")).when(pushService).pushNotification(any(PushPayload.class));
@@ -154,7 +167,7 @@ class AlarmApiEndToEndTest {
 
     @Test
     void trigger_queriesTheProviderOnlyOnce_forTwoIdenticalRequests() throws Exception {
-        itunesFinds("Imagine", "John Lennon");
+        itunesFinds("Imagine", "Imagine", "John Lennon");
 
         trigger("bob", "WEDNESDAY", "NUAGEUX").andExpect(status().isOk());
         trigger("bob", "THURSDAY", "NUAGEUX").andExpect(status().isOk());

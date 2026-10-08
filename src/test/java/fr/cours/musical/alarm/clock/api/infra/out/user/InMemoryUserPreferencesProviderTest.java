@@ -5,6 +5,8 @@ import fr.cours.musical.alarm.clock.api.domain.model.UserPreferences;
 import fr.cours.musical.alarm.clock.api.domain.model.WeatherType;
 import org.junit.jupiter.api.Test;
 
+import java.time.DayOfWeek;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class InMemoryUserPreferencesProviderTest {
@@ -16,12 +18,22 @@ class InMemoryUserPreferencesProviderTest {
         UserPreferences alice = provider.findByUserId("alice").orElseThrow();
 
         assertThat(alice.preferredChannel()).isEqualTo(ChannelType.EMAIL);
-        assertThat(alice.queryFor(WeatherType.SOLEIL)).isEqualTo("Walking on Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SOLEIL)).isEqualTo("Walking on Sunshine");
     }
 
     @Test
-    void findByUserId_returnsFallbackForUnmappedWeather() {
-        assertThat(provider.findByUserId("alice").orElseThrow().queryFor(WeatherType.NUAGEUX))
+    void findByUserId_givesDifferentTracksForDifferentDaysAndWeathers() {
+        UserPreferences alice = provider.findByUserId("alice").orElseThrow();
+
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.SOLEIL)).isEqualTo("Walking on Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.MONDAY, WeatherType.PLUIE)).isEqualTo("Singin' in the Rain");
+        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.SOLEIL)).isEqualTo("Good Day Sunshine");
+        assertThat(alice.queryFor(DayOfWeek.TUESDAY, WeatherType.PLUIE)).isEqualTo("Purple Rain");
+    }
+
+    @Test
+    void findByUserId_returnsFallbackForUnmappedCombination() {
+        assertThat(provider.findByUserId("alice").orElseThrow().queryFor(DayOfWeek.SUNDAY, WeatherType.NUAGEUX))
                 .isEqualTo("Here Comes the Sun");
     }
 

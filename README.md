@@ -20,7 +20,7 @@ Réponse `200` :
 
 `degraded=true` signale un mode dégradé : morceau de secours local et/ou canal de repli. Erreurs : `400` (entrée invalide), `404` (utilisateur inconnu), `503` (aucun canal n'a pu délivrer le réveil — jamais de silence).
 
-Utilisateurs de démonstration (mock du service interne) : `alice` (email), `bob` (SMS), `carol` (push).
+Utilisateurs de démonstration (mock du service interne) : `alice` (email ; lundi/mardi × soleil/pluie), `bob` (SMS ; mardi et samedi sous la neige), `carol` (push ; uniquement un morceau de secours).
 
 ## Architecture : besoins métier → décisions techniques
 
@@ -36,7 +36,9 @@ Organisation (`fr.cours.musical.alarm.clock.api`) : `domain` (modèle, ports, ex
 
 Les deux exigences d'architecture sont **vérifiées automatiquement** par `ArchitectureTest` (ArchUnit) : le domaine et l'application ne dépendent d'aucun framework, fournisseur ou canal ; les adaptateurs ne se connaissent pas entre eux ; aucun bean Spring n'est instancié avec `new` (IoC / DI). Les champs propres aux API (par ex. `trackViewUrl` d'iTunes) restent dans des DTO privés de l'adaptateur.
 
-Hypothèses : le jour de la semaine sert à choisir le morceau de la liste locale (déterministe) et au texte du message ; les destinataires des mocks sont dérivés de l'`userId` ; la panne du service utilisateur n'est pas couverte.
+**Choix du morceau.** Il dépend du **couple (jour de la semaine, météo)** : le service utilisateur (mocké) renvoie, pour chaque utilisateur, un morceau par combinaison choisie — par exemple lundi + soleil → *Walking on Sunshine*, lundi + pluie → *Singin' in the Rain*, mardi + soleil → *Good Day Sunshine*. Une combinaison non choisie reçoit le **morceau de secours de l'utilisateur** ; si aucun fournisseur musical ne le trouve, la **liste locale** (un morceau par jour) prend le relais.
+
+Hypothèses : les destinataires des mocks sont dérivés de l'`userId` ; la panne du service utilisateur n'est pas couverte.
 
 ## Configuration
 

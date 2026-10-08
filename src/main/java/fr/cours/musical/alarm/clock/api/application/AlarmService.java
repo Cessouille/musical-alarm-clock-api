@@ -27,7 +27,7 @@ public class AlarmService implements AlarmUseCase {
         UserPreferences preferences = userPreferencesProvider.findByUserId(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
 
-        TrackSelector.Selection selection = trackSelector.select(preferences.queryFor(weather), dayOfWeek);
+        TrackSelector.Selection selection = trackSelector.select(preferences.queryFor(dayOfWeek, weather), dayOfWeek);
         WakeUpMessage message = new WakeUpMessage(userId, dayOfWeek, weather, selection.track());
         NotificationDispatcher.Delivery delivery =
                 notificationDispatcher.dispatch(message, preferences.preferredChannel());
