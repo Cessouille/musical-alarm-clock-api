@@ -2,6 +2,7 @@ package fr.cours.musical.alarm.clock.api.infra.in.exception;
 
 import fr.cours.musical.alarm.clock.api.domain.exception.AlarmDeliveryException;
 import fr.cours.musical.alarm.clock.api.domain.exception.UserNotFoundException;
+import fr.cours.musical.alarm.clock.api.domain.exception.UserPreferencesUnavailableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AlarmDeliveryException.class)
     public ResponseEntity<ApiError> handleDeliveryFailure(AlarmDeliveryException ex) {
         log.error(ex.getMessage());
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ApiError(HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(UserPreferencesUnavailableException.class)
+    public ResponseEntity<ApiError> handlePreferencesUnavailable(UserPreferencesUnavailableException ex) {
+        log.error(ex.getMessage(), ex.getCause());
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                 .body(new ApiError(HttpStatus.SERVICE_UNAVAILABLE.value(), ex.getMessage()));
     }

@@ -27,8 +27,10 @@ class ArchitectureTest {
             noClasses().that().resideInAPackage("..application..")
                     .should().dependOnClassesThat().resideInAnyPackage(
                             "..infra..", "org.springframework.web..", "org.springframework.http..",
-                            "com.fasterxml..", "tools.jackson..")
-                    .because("services depend on ports, never on adapters or transport");
+                            "org.springframework.boot..", "org.springframework.beans..",
+                            "org.springframework.context..", "com.fasterxml..", "tools.jackson..")
+                    .because("services depend on ports, never on adapters, transport or Spring wiring "
+                            + "(only the org.springframework.stereotype annotations are tolerated)");
 
     @ArchTest
     static final ArchRule adapters_do_not_depend_on_each_other =

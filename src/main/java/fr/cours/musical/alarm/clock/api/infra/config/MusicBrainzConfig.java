@@ -11,14 +11,10 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class MusicBrainzConfig {
 
-    @Value("${app.musicbrainz.base-url}")
-    private String baseUrl;
-
-    @Value("${app.musicbrainz.user-agent}")
-    private String userAgent;
-
     @Bean("musicBrainzApiHttpClient")
-    public RestClient musicBrainzApiHttpClient(ClientHttpRequestFactory outboundRequestFactory) {
+    public RestClient musicBrainzApiHttpClient(ClientHttpRequestFactory outboundRequestFactory,
+                                               @Value("${app.musicbrainz.base-url}") String baseUrl,
+                                               @Value("${app.musicbrainz.user-agent}") String userAgent) {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(outboundRequestFactory)

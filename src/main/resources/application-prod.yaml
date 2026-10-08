@@ -1,0 +1,5 @@
+app:
+  musicbrainz:
+    user-agent: "MusicalAlarmClockTP/1.0 (${MUSICBRAINZ_CONTACT})"
+  notification:
+    mock: false

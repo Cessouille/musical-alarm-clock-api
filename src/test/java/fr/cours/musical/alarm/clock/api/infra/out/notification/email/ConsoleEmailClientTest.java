@@ -8,7 +8,7 @@ class ConsoleEmailClientTest {
 
     @Test
     void sendEmail_doesNotThrow() {
-        assertThatCode(() -> new ConsoleEmailClient().sendEmail("alice@mock.invalid", "subject", "body"))
+        assertThatCode(() -> new ConsoleEmailClient().sendEmail("alice@example.invalid", "subject", "body"))
                 .doesNotThrowAnyException();
     }
 }

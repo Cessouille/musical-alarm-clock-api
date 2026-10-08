@@ -1,6 +1,9 @@
 import unittest
+import json
+import tempfile
+from pathlib import Path
 
-from dependency_report import classify, is_stable, latest_stable, replace_between_markers
+from dependency_report import classify, is_stable, latest_stable, replace_between_markers, runtime_artifacts, scope_of
 
 
 class DependencyReportTest(unittest.TestCase):
@@ -38,3 +41,16 @@ class DependencyReportTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+    def test_scope_is_derived_from_the_sbom(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            sbom = Path(tmp) / "bom.json"
+            sbom.write_text(json.dumps({"components": [{"group": "org.springframework", "name": "spring-core"}]}),
+                            encoding="utf-8")
+            runtime = runtime_artifacts(sbom)
+        self.assertEqual("compile/runtime", scope_of("org.springframework:spring-core", runtime))
+        self.assertEqual("test", scope_of("org.mockito:mockito-core", runtime))
+
+    def test_scope_is_unknown_without_sbom(self):
+        self.assertIsNone(runtime_artifacts(Path("does-not-exist.json")))
+        self.assertEqual("?", scope_of("a:b", None))

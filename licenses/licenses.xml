@@ -340,7 +340,7 @@
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-core</artifactId>
-      <version>11.0.24</version>
+      <version>11.0.26</version>
       <licenses>
         <license>
           <name>Apache License, Version 2.0</name>
@@ -353,7 +353,7 @@
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-el</artifactId>
-      <version>11.0.24</version>
+      <version>11.0.26</version>
       <licenses>
         <license>
           <name>Apache License, Version 2.0</name>
@@ -366,7 +366,7 @@
     <dependency>
       <groupId>org.apache.tomcat.embed</groupId>
       <artifactId>tomcat-embed-websocket</artifactId>
-      <version>11.0.24</version>
+      <version>11.0.26</version>
       <licenses>
         <license>
           <name>Apache License, Version 2.0</name>

@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Génère le tableau « package / licence / version / fraîcheur » du README.
 
-Entrée : target/generated-resources/licenses.xml (mvn license:download-licenses).
+Entrée : target/generated-resources/licenses.xml (mvn license:download-licenses)
+et, pour la colonne « Portée », le SBOM CycloneDX produit par `mvn package`
+(target/classes/META-INF/sbom/application.cdx.json, hors portée test).
 Fraîcheur : dernière version stable publiée sur Maven Central (maven-metadata.xml).
 Usage : python scripts/dependency_report.py [--readme README.md]
 """
+import json
 import re
 import sys
 import urllib.request
@@ -12,6 +15,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 LICENSES_XML = Path("target/generated-resources/licenses.xml")
+SBOM_JSON = Path("target/classes/META-INF/sbom/application.cdx.json")
 CENTRAL = "https://repo1.maven.org/maven2"
 START_MARKER = "<!-- DEPS:START -->"
 END_MARKER = "<!-- DEPS:END -->"
@@ -43,6 +47,20 @@ def classify(installed: str, latest) -> str:
     return "mineure/patch en retard"
 
 
+def runtime_artifacts(sbom_path: Path = SBOM_JSON):
+    """Ensemble des « groupId:artifactId » du SBOM (compile/runtime) ; None si le SBOM est absent."""
+    if not sbom_path.exists():
+        return None
+    components = json.loads(sbom_path.read_text(encoding="utf-8")).get("components", [])
+    return {f"{c.get('group', '')}:{c['name']}" for c in components}
+
+
+def scope_of(artifact: str, runtime) -> str:
+    if runtime is None:
+        return "?"
+    return "compile/runtime" if artifact in runtime else "test"
+
+
 def fetch_versions(group_id: str, artifact_id: str):
     url = f"{CENTRAL}/{group_id.replace('.', '/')}/{artifact_id}/maven-metadata.xml"
     request = urllib.request.Request(url, headers={"User-Agent": "MusicalAlarmClockTP-license-audit/1.0"})
@@ -57,16 +75,18 @@ def fetch_versions(group_id: str, artifact_id: str):
 
 def build_table() -> str:
     root = ET.parse(LICENSES_XML).getroot()
+    runtime = runtime_artifacts()
     rows = []
     for dep in root.findall(".//dependency"):
         group_id, artifact_id, version = (dep.findtext(t) for t in ("groupId", "artifactId", "version"))
         licenses = " / ".join(l.findtext("name") or "UNKNOWN" for l in dep.findall("./licenses/license")) or "UNKNOWN"
         latest = latest_stable(fetch_versions(group_id, artifact_id))
-        rows.append((f"{group_id}:{artifact_id}", version, latest or "?", classify(version, latest), licenses))
+        artifact = f"{group_id}:{artifact_id}"
+        rows.append((artifact, scope_of(artifact, runtime), version, latest or "?", classify(version, latest), licenses))
     rows.sort()
-    lines = ["| Package | Version installée | Dernière stable | Fraîcheur | Licence(s) |",
-             "|---|---|---|---|---|"]
-    lines += [f"| {p} | {v} | {l} | {f} | {lic} |" for p, v, l, f, lic in rows]
+    lines = ["| Package | Portée | Version installée | Dernière stable | Fraîcheur | Licence(s) |",
+             "|---|---|---|---|---|---|"]
+    lines += [f"| {p} | {sc} | {v} | {l} | {f} | {lic} |" for p, sc, v, l, f, lic in rows]
     return "\n".join(lines)
 
 

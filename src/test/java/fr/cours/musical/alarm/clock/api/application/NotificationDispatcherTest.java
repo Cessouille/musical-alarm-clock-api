@@ -3,6 +3,7 @@ package fr.cours.musical.alarm.clock.api.application;
 import fr.cours.musical.alarm.clock.api.domain.exception.AlarmDeliveryException;
 import fr.cours.musical.alarm.clock.api.domain.model.ChannelType;
 import fr.cours.musical.alarm.clock.api.domain.model.NotificationPolicy;
+import fr.cours.musical.alarm.clock.api.domain.model.Contact;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
 import fr.cours.musical.alarm.clock.api.domain.model.WakeUpMessage;
 import fr.cours.musical.alarm.clock.api.domain.model.WeatherType;
@@ -10,6 +11,7 @@ import fr.cours.musical.alarm.clock.api.domain.port.out.Notifier;
 import org.junit.jupiter.api.Test;
 
 import java.time.DayOfWeek;
+import java.util.Map;
 import java.util.List;
 
 import static fr.cours.musical.alarm.clock.api.domain.model.ChannelType.EMAIL;
@@ -27,7 +29,9 @@ import static org.mockito.Mockito.when;
 class NotificationDispatcherTest {
 
     private static final WakeUpMessage MESSAGE = new WakeUpMessage("alice", DayOfWeek.MONDAY,
-            WeatherType.SUN, new Track("Walking on Sunshine", "Katrina & The Waves"));
+            WeatherType.SUN, new Track("Walking on Sunshine", "Katrina & The Waves"),
+            new Contact(Map.of(ChannelType.EMAIL, "alice@example.invalid", ChannelType.SMS, "+33600000001",
+            ChannelType.PUSH, "device-alice")));
     private static final NotificationPolicy POLICY = new NotificationPolicy(List.of(PUSH, SMS, EMAIL));
 
     private final Notifier email = notifier(EMAIL);

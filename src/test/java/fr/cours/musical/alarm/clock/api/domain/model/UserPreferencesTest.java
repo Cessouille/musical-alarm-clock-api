@@ -6,17 +6,21 @@ import java.time.DayOfWeek;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserPreferencesTest {
+
+    private static final Contact CONTACT = new Contact(Map.of(ChannelType.EMAIL, "alice@example.invalid", ChannelType.SMS, "+33600000001",
+            ChannelType.PUSH, "device-alice"));
 
     private final UserPreferences withMapping = new UserPreferences("alice",
             Map.of(new AlarmSlot(DayOfWeek.MONDAY, WeatherType.SUN), "Walking on Sunshine",
                     new AlarmSlot(DayOfWeek.MONDAY, WeatherType.RAIN), "Singin' in the Rain",
                     new AlarmSlot(DayOfWeek.TUESDAY, WeatherType.SUN), "Good Day Sunshine"),
-            "Here Comes the Sun", ChannelType.EMAIL);
+            "Here Comes the Sun", ChannelType.EMAIL, CONTACT);
 
     private final UserPreferences withoutMapping = new UserPreferences("carol",
-            Map.of(), "Dancing Queen", ChannelType.PUSH);
+            Map.of(), "Dancing Queen", ChannelType.PUSH, CONTACT);
 
     @Test
     void queryFor_returnsTheTrackOfTheDayAndWeather() {
@@ -46,5 +50,17 @@ class UserPreferencesTest {
                 assertThat(withoutMapping.queryFor(day, weather)).isEqualTo("Dancing Queen");
             }
         }
+    }
+
+    @Test
+    void constructor_rejectsMissingMandatoryFields() {
+        assertThatThrownBy(() -> new UserPreferences(null, Map.of(), "x", ChannelType.EMAIL, CONTACT))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new UserPreferences("a", Map.of(), null, ChannelType.EMAIL, CONTACT))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new UserPreferences("a", Map.of(), "x", null, CONTACT))
+                .isInstanceOf(NullPointerException.class);
+        assertThatThrownBy(() -> new UserPreferences("a", Map.of(), "x", ChannelType.EMAIL, null))
+                .isInstanceOf(NullPointerException.class);
     }
 }

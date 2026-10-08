@@ -9,11 +9,9 @@ import org.springframework.web.client.RestClient;
 @Configuration
 public class ITunesConfig {
 
-    @Value("${app.itunes.base-url}")
-    private String baseUrl;
-
     @Bean("itunesApiHttpClient")
-    public RestClient itunesApiHttpClient(ClientHttpRequestFactory outboundRequestFactory) {
+    public RestClient itunesApiHttpClient(ClientHttpRequestFactory outboundRequestFactory,
+                                          @Value("${app.itunes.base-url}") String baseUrl) {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(outboundRequestFactory)

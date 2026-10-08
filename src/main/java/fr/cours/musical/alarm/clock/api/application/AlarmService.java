@@ -1,6 +1,7 @@
 package fr.cours.musical.alarm.clock.api.application;
 
 import fr.cours.musical.alarm.clock.api.domain.exception.UserNotFoundException;
+import fr.cours.musical.alarm.clock.api.domain.exception.UserPreferencesUnavailableException;
 import fr.cours.musical.alarm.clock.api.domain.model.AlarmResult;
 import fr.cours.musical.alarm.clock.api.domain.model.UserPreferences;
 import fr.cours.musical.alarm.clock.api.domain.model.WakeUpMessage;
@@ -24,11 +25,10 @@ public class AlarmService implements AlarmUseCase {
 
     @Override
     public AlarmResult triggerAlarm(String userId, DayOfWeek dayOfWeek, WeatherType weather) {
-        UserPreferences preferences = userPreferencesProvider.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+        UserPreferences preferences = loadPreferences(userId);
 
         TrackSelector.Selection selection = trackSelector.select(preferences.queryFor(dayOfWeek, weather), dayOfWeek);
-        WakeUpMessage message = new WakeUpMessage(userId, dayOfWeek, weather, selection.track());
+        WakeUpMessage message = new WakeUpMessage(userId, dayOfWeek, weather, selection.track(), preferences.contact());
         NotificationDispatcher.Delivery delivery =
                 notificationDispatcher.dispatch(message, preferences.preferredChannel());
 
@@ -36,5 +36,16 @@ public class AlarmService implements AlarmUseCase {
         log.info("Alarm sent to user {} via {} (track='{}', degraded={})",
                 userId, delivery.channel(), selection.track().title(), degraded);
         return new AlarmResult(userId, selection.track(), delivery.channel(), degraded);
+    }
+
+    private UserPreferences loadPreferences(String userId) {
+        try {
+            return userPreferencesProvider.findByUserId(userId)
+                    .orElseThrow(() -> new UserNotFoundException(userId));
+        } catch (UserNotFoundException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new UserPreferencesUnavailableException(userId, e);
+        }
     }
 }

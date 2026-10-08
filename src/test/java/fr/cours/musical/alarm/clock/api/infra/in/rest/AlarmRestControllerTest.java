@@ -2,6 +2,7 @@ package fr.cours.musical.alarm.clock.api.infra.in.rest;
 
 import fr.cours.musical.alarm.clock.api.domain.exception.AlarmDeliveryException;
 import fr.cours.musical.alarm.clock.api.domain.exception.UserNotFoundException;
+import fr.cours.musical.alarm.clock.api.domain.exception.UserPreferencesUnavailableException;
 import fr.cours.musical.alarm.clock.api.domain.model.AlarmResult;
 import fr.cours.musical.alarm.clock.api.domain.model.ChannelType;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
@@ -74,6 +75,32 @@ class AlarmRestControllerTest {
                 {"userId":"alice","dayOfWeek":"MONDAY","weather":"SUN"}""")
                 .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.status").value(503));
+    }
+
+    @Test
+    void trigger_returns503_whenTheUserServiceIsUnavailable() throws Exception {
+        when(alarmUseCase.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
+                .thenThrow(new UserPreferencesUnavailableException("alice", new IllegalStateException("down")));
+
+        trigger("""
+                {"userId":"alice","dayOfWeek":"MONDAY","weather":"SUN"}""")
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.status").value(503));
+    }
+
+    @Test
+    void trigger_returns400_whenUserIdContainsUnsafeCharacters() throws Exception {
+        trigger("""
+                {"userId":"alice\\nINFO forged","dayOfWeek":"MONDAY","weather":"SUN"}""")
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(alarmUseCase);
+    }
+
+    @Test
+    void trigger_returns400_whenUserIdIsTooLong() throws Exception {
+        trigger("{\"userId\":\"" + "a".repeat(65) + "\",\"dayOfWeek\":\"MONDAY\",\"weather\":\"SUN\"}")
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(alarmUseCase);
     }
 
     @Test

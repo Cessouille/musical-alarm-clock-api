@@ -7,10 +7,16 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 
 import java.net.http.HttpClient;
+import java.time.Clock;
 import java.time.Duration;
 
 @Configuration
 public class HttpClientConfig {
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemUTC();
+    }
 
     @Bean
     public ClientHttpRequestFactory outboundRequestFactory(

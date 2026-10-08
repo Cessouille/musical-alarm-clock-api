@@ -36,7 +36,7 @@ class SmsNotifierContractTest extends NotifierContractTest {
     @Override
     protected String textReceivedByVendor() {
         ArgumentCaptor<String> text = ArgumentCaptor.forClass(String.class);
-        verify(smsGateway).sendText(eq("+000-alice"), text.capture());
+        verify(smsGateway).sendText(eq("+33600000001"), text.capture());
         return text.getValue();
     }
 
@@ -48,7 +48,7 @@ class SmsNotifierContractTest extends NotifierContractTest {
     @Test
     void send_truncatesTextToOneSmsSegment() {
         WakeUpMessage longMessage = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN,
-                new Track("A".repeat(300), "B"));
+                new Track("A".repeat(300), "B"), MESSAGE.contact());
 
         notifier.send(longMessage);
 
@@ -58,7 +58,7 @@ class SmsNotifierContractTest extends NotifierContractTest {
     @Test
     void send_doesNotSplitASurrogatePairWhenTruncating() {
         WakeUpMessage emojiMessage = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN,
-                new Track("😀".repeat(200), "B"));
+                new Track("😀".repeat(200), "B"), MESSAGE.contact());
 
         notifier.send(emojiMessage);
 

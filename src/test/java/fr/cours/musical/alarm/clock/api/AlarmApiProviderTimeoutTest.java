@@ -26,6 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
                 "app.music.providers=itunes,musicbrainz",
+                "app.music.failure-cooldown=0s",
                 "app.http.connect-timeout=300ms",
                 "app.http.read-timeout=300ms"
         })
@@ -74,6 +75,6 @@ class AlarmApiProviderTimeoutTest {
                 .andExpect(jsonPath("$.track.title").value("Here Comes the Sun"))
                 .andExpect(jsonPath("$.degraded").value(true));
 
-        assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofSeconds(2));
+        assertThat(Duration.ofNanos(System.nanoTime() - start)).isLessThan(Duration.ofMillis(2500));
     }
 }

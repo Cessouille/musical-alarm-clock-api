@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         properties = {
                 "spring.main.allow-bean-definition-overriding=true",
                 "app.music.providers=itunes,musicbrainz",
+                "app.music.failure-cooldown=0s",
                 "app.notification.fallback-order=PUSH,SMS,EMAIL"
         })
 @AutoConfigureMockMvc
@@ -92,7 +93,7 @@ class AlarmApiEndToEndTest {
                 .andExpect(jsonPath("$.degraded").value(false))
                 .andExpect(jsonPath("$.track.trackViewUrl").doesNotExist());
 
-        verify(emailClient).sendEmail(eq("alice@mock.invalid"), any(), contains("Walking on Sunshine"));
+        verify(emailClient).sendEmail(eq("alice@example.invalid"), any(), contains("Walking on Sunshine"));
         itunesServer.verify();
     }
 

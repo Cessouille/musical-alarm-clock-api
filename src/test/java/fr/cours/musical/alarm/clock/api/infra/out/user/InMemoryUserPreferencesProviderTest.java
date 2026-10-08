@@ -48,4 +48,14 @@ class InMemoryUserPreferencesProviderTest {
         assertThat(provider.findByUserId("ghost")).isEmpty();
         assertThat(provider.findByUserId(null)).isEmpty();
     }
+
+    @Test
+    void findByUserId_providesContactDetailsForEveryChannel() {
+        for (String user : new String[]{"alice", "bob", "carol"}) {
+            var contact = provider.findByUserId(user).orElseThrow().contact();
+            assertThat(contact.addressFor(ChannelType.EMAIL)).hasValueSatisfying(a -> assertThat(a).endsWith("@example.invalid"));
+            assertThat(contact.addressFor(ChannelType.SMS)).hasValueSatisfying(a -> assertThat(a).startsWith("+"));
+            assertThat(contact.addressFor(ChannelType.PUSH)).isPresent();
+        }
+    }
 }

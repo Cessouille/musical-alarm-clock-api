@@ -30,7 +30,7 @@ class EmailNotifierContractTest extends NotifierContractTest {
     protected String textReceivedByVendor() {
         ArgumentCaptor<String> subject = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
-        verify(emailClient).sendEmail(eq("alice@mock.invalid"), subject.capture(), body.capture());
+        verify(emailClient).sendEmail(eq("alice@example.invalid"), subject.capture(), body.capture());
         return subject.getValue() + " " + body.getValue();
     }
 

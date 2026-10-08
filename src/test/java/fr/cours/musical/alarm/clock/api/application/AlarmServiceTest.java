@@ -2,9 +2,11 @@ package fr.cours.musical.alarm.clock.api.application;
 
 import fr.cours.musical.alarm.clock.api.domain.exception.AlarmDeliveryException;
 import fr.cours.musical.alarm.clock.api.domain.exception.UserNotFoundException;
+import fr.cours.musical.alarm.clock.api.domain.exception.UserPreferencesUnavailableException;
 import fr.cours.musical.alarm.clock.api.domain.model.AlarmResult;
 import fr.cours.musical.alarm.clock.api.domain.model.AlarmSlot;
 import fr.cours.musical.alarm.clock.api.domain.model.ChannelType;
+import fr.cours.musical.alarm.clock.api.domain.model.Contact;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
 import fr.cours.musical.alarm.clock.api.domain.model.UserPreferences;
 import fr.cours.musical.alarm.clock.api.domain.model.WakeUpMessage;
@@ -31,9 +33,11 @@ import static org.mockito.Mockito.when;
 class AlarmServiceTest {
 
     private static final Track TRACK = new Track("Walking on Sunshine", "Katrina & The Waves");
+    private static final Contact CONTACT = new Contact(Map.of(ChannelType.EMAIL, "alice@example.invalid", ChannelType.SMS, "+33600000001",
+            ChannelType.PUSH, "device-alice"));
     private static final UserPreferences ALICE = new UserPreferences("alice",
             Map.of(new AlarmSlot(DayOfWeek.MONDAY, WeatherType.SUN), "Walking on Sunshine"),
-            "Here Comes the Sun", ChannelType.EMAIL);
+            "Here Comes the Sun", ChannelType.EMAIL, CONTACT);
 
     @Mock
     private UserPreferencesProvider userPreferencesProvider;
@@ -56,7 +60,7 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        WakeUpMessage expected = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK);
+        WakeUpMessage expected = new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK, CONTACT);
         when(notificationDispatcher.dispatch(expected, ChannelType.EMAIL))
                 .thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
@@ -70,7 +74,7 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Here Comes the Sun", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SNOW, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SNOW, TRACK, CONTACT),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
         AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SNOW);
@@ -83,7 +87,7 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Here Comes the Sun", DayOfWeek.TUESDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.TUESDAY, WeatherType.SUN, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.TUESDAY, WeatherType.SUN, TRACK, CONTACT),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
         alarmService.triggerAlarm("alice", DayOfWeek.TUESDAY, WeatherType.SUN);
@@ -96,7 +100,7 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, true));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK, CONTACT),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.EMAIL, false));
 
         assertThat(alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN).degraded()).isTrue();
@@ -107,7 +111,7 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK, CONTACT),
                 ChannelType.EMAIL)).thenReturn(new NotificationDispatcher.Delivery(ChannelType.PUSH, true));
 
         AlarmResult result = alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN);
@@ -132,10 +136,22 @@ class AlarmServiceTest {
         when(userPreferencesProvider.findByUserId("alice")).thenReturn(Optional.of(ALICE));
         when(trackSelector.select("Walking on Sunshine", DayOfWeek.MONDAY))
                 .thenReturn(new TrackSelector.Selection(TRACK, false));
-        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK),
+        when(notificationDispatcher.dispatch(new WakeUpMessage("alice", DayOfWeek.MONDAY, WeatherType.SUN, TRACK, CONTACT),
                 ChannelType.EMAIL)).thenThrow(new AlarmDeliveryException("alice", List.of(ChannelType.EMAIL)));
 
         assertThatThrownBy(() -> alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
                 .isInstanceOf(AlarmDeliveryException.class);
+    }
+
+    @Test
+    void triggerAlarm_throwsPreferencesUnavailable_andDoesNothingElse_whenTheUserServiceFails() {
+        when(userPreferencesProvider.findByUserId("alice")).thenThrow(new IllegalStateException("user service down"));
+
+        assertThatThrownBy(() -> alarmService.triggerAlarm("alice", DayOfWeek.MONDAY, WeatherType.SUN))
+                .isInstanceOf(UserPreferencesUnavailableException.class)
+                .hasMessageContaining("alice")
+                .hasCauseInstanceOf(IllegalStateException.class);
+
+        verifyNoInteractions(trackSelector, notificationDispatcher);
     }
 }

@@ -8,6 +8,6 @@ class ConsoleSmsGatewayTest {
 
     @Test
     void sendText_returnsAMessageId() {
-        assertThat(new ConsoleSmsGateway().sendText("+000-alice", "hello")).startsWith("sms-");
+        assertThat(new ConsoleSmsGateway().sendText("+33600000001", "hello")).startsWith("sms-");
     }
 }

@@ -4,8 +4,8 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
 import fr.cours.musical.alarm.clock.api.domain.port.out.MusicProvider;
+import fr.cours.musical.alarm.clock.api.infra.out.music.MusicSource;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Component("musicbrainz")
-@Qualifier("source")
+@MusicSource
 @RequiredArgsConstructor
 public class MusicBrainzMusicProvider implements MusicProvider {
 

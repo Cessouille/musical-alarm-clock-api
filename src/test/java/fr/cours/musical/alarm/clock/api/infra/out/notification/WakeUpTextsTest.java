@@ -1,5 +1,7 @@
 package fr.cours.musical.alarm.clock.api.infra.out.notification;
 
+import fr.cours.musical.alarm.clock.api.domain.model.ChannelType;
+import fr.cours.musical.alarm.clock.api.domain.model.Contact;
 import fr.cours.musical.alarm.clock.api.domain.model.Track;
 import fr.cours.musical.alarm.clock.api.domain.model.WakeUpMessage;
 import fr.cours.musical.alarm.clock.api.domain.model.WeatherType;
@@ -13,7 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WakeUpTextsTest {
 
     private static final WakeUpMessage MESSAGE = new WakeUpMessage("alice", DayOfWeek.MONDAY,
-            WeatherType.SUN, new Track("Walking on Sunshine", "Katrina & The Waves"));
+            WeatherType.SUN, new Track("Walking on Sunshine", "Katrina & The Waves"),
+            new Contact(Map.of(ChannelType.EMAIL, "alice@example.invalid", ChannelType.SMS, "+33600000001",
+            ChannelType.PUSH, "device-alice")));
 
     @Test
     void dayName_isInFrench() {
@@ -38,6 +42,6 @@ class WakeUpTextsTest {
                 WeatherType.SNOW, "neige", WeatherType.CLOUDY, "nuageux");
 
         expected.forEach((weather, label) -> assertThat(WakeUpTexts.body(
-                new WakeUpMessage("alice", DayOfWeek.MONDAY, weather, MESSAGE.track()))).contains("météo : " + label));
+                new WakeUpMessage("alice", DayOfWeek.MONDAY, weather, MESSAGE.track(), MESSAGE.contact()))).contains("météo : " + label));
     }
 }
